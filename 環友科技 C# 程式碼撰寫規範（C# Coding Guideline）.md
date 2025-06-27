@@ -229,287 +229,1054 @@ cd examples/WebApiExample && dotnet run
   };
   ```
 
-### 3.1. 關鍵字與型別
+### 3.6. 關鍵字與型別
 
 * 內建型別請使用 C# 關鍵字（`int` 而非 `System.Int32`）。
 * 本地變數、參數、成員存取時統一使用預先定義的型別關鍵字。
 
-### 3.2. `this`
+```csharp
+// ✅ 推薦：使用 C# 關鍵字
+int count = 10;
+string message = "Hello";
+bool isValid = true;
+decimal price = 99.99m;
+
+// ❌ 避免：使用 .NET 型別名稱
+Int32 count = 10;
+String message = "Hello";
+Boolean isValid = true;
+Decimal price = 99.99m;
+```
+
+### 3.7. `this` 關鍵字
 
 * **不**強制使用 `this.` 來存取事件、欄位、方法或屬性，除非需要解決命名衝突。
 
-### 3.3. 括號
+```csharp
+public class UserService
+{
+    private readonly IRepository _repository;
+    
+    public UserService(IRepository repository)
+    {
+        _repository = repository; // ✅ 不需要 this.
+    }
+    
+    public void ProcessUser(string name)
+    {
+        // ✅ 只在需要解決衝突時使用 this
+        this.name = name; // 假設有欄位 name
+    }
+}
+```
 
-* **必加括號**：  
-  - 在算術、關係等二元運算子中，加上括號區分運算順序。  
-* **非必要不加括號**：  
-  - 避免視覺雜訊，盡量精簡。
+### 3.8. 括號使用
 
-### 3.4. 修飾詞
+* **必加括號**：在算術、關係等二元運算子中，加上括號區分運算順序。  
+* **非必要不加括號**：避免視覺雜訊，盡量精簡。
+
+```csharp
+// ✅ 推薦：清楚的運算優先順序
+var result = (a + b) * (c - d);
+var isValid = (age >= 18) && (hasPermission || isAdmin);
+
+// ❌ 避免：不必要的括號
+var simple = (x);
+var basic = (GetValue());
+```
+
+### 3.9. 修飾詞順序
 
 * 非介面成員，**總是**加上存取修飾詞（`public`、`private`、`protected`…）。
 * 修飾詞順序建議：
-  ```
-  public, private, protected, internal, file, const, static, extern, new,
-  virtual, abstract, sealed, override, readonly, unsafe, required, volatile, async
-  ```
 
-### 3.5. 表達式層級偏好
+```csharp
+// 正確的修飾詞順序
+public static readonly string DefaultValue = "test";
+private static readonly ILogger s_logger = LoggerFactory.Create();
+public virtual async Task<string> ProcessAsync();
+protected internal sealed override void HandleEvent();
+```
 
-* **使用 `??` 空合併運算子**
-* **使用集合初始器**  
-  ```csharp
-  var list = new List<int> { 1, 2, 3 };
-  ```
-* **使用明確的元組名稱**  
-  讓元組內部成員易於識別。
-* **使用空值傳播運算子 `?.`**
-* **使用物件初始化器**  
-  ```csharp
-  var person = new Person { Name = "John", Age = 30 };
-  ```
-* **運算子若需換行，將運算子置於行首**
-* **優先使用自動屬性**  
-  ```csharp
-  public int Age { get; set; }
-  ```
-* **型別鬆散匹配時可使用集合表達式**
-* **使用複合賦值運算子（`+=`, `-=`）**
-* **條件賦值或回傳時，善用條件運算子 (`?:`)**  
-* **foreach 迴圈中，若型別明確可使用明確型別宣告**
-* **推斷匿名型別成員名稱與元組名稱**
-* **使用 `is null`** 檢查空值
-* **簡化布林表達式**  
-  如 `if (x)` 而非 `if (x == true)`
-* **簡化插值字串**  
-  `$"{x}"` 而非 `$"{x.ToString()}"`
+### 3.10. 表達式層級偏好
 
-### 3.6. 欄位
+#### 空值處理
+```csharp
+// ✅ 推薦：使用 null 條件運算子
+var length = text?.Length ?? 0;
+customer?.UpdateLastAccess();
 
-* 若欄位初始化後不再改變，建議使用 `readonly`，避免意外改動。
+// ✅ 推薦：使用 is null 檢查
+if (value is null) return;
+if (value is not null) Process(value);
+```
 
-### 3.7. 參數
+#### 集合與物件初始化
+```csharp
+// ✅ 推薦：集合初始化器與表達式
+List<string> items = ["apple", "banana", "cherry"];
+Dictionary<string, int> scores = new() 
+{ 
+    ["Alice"] = 95, 
+    ["Bob"] = 87 
+};
 
-* 移除未使用參數，避免混淆或導致警告。
+// ✅ 推薦：物件初始化器
+var person = new Person 
+{ 
+    Name = "John", 
+    Age = 30,
+    Address = new Address { City = "台北", ZipCode = "100" }
+};
+```
 
-### 3.8. 變數宣告
+#### 元組與解構
+```csharp
+// ✅ 推薦：明確的元組名稱
+(string FirstName, string LastName) GetFullName() => ("John", "Doe");
 
-* 區域變數可以使用 `var`，但**不**針對內建型別使用。  
-* 只有在型別明顯可推斷時才用 `var`。
+// ✅ 推薦：解構賦值
+var (first, last) = GetFullName();
+var (x, y) = GetCoordinates();
 
-### 3.9. 表達式主體成員
+// ✅ 推薦：元組交換
+(a, b) = (b, a);
+```
 
-* **可**使用表達式主體：  
-  - 定義存取子、索引子、lambda、簡單屬性。  
-* **不**使用表達式主體：  
-  - 建構子、局部函式、方法、運算子若相對複雜時。
+#### 條件運算與模式比對
+```csharp
+// ✅ 推薦：條件運算子用於簡單賦值
+var status = age >= 18 ? "成年" : "未成年";
 
-### 3.10. 模式比對
+// ✅ 推薦：Switch 表達式用於複雜邏輯
+var category = customer.Type switch
+{
+    CustomerType.Premium => "白金會員",
+    CustomerType.Gold => "金卡會員", 
+    CustomerType.Silver => "銀卡會員",
+    _ => "一般會員"
+};
+```
 
-* **優先使用模式比對**（取代 `as` + null 檢查 / `is` + cast）。
-* **擴展屬性模式**、**`not` 模式**、**switch 表達式** 同樣能使邏輯更簡潔。
+## 4. 異步程式設計最佳實務
 
-### 3.11. 空值檢查
+### 4.1. Async/Await 模式
 
-* **使用條件委派呼叫 `?.Invoke`**  
-  例如：
-  ```csharp
-  MyEvent?.Invoke(this, EventArgs.Empty);
-  ```
+```csharp
+// ✅ 推薦：正確的異步方法命名和實作
+public async Task<User> GetUserAsync(int id)
+{
+    var user = await _repository.GetByIdAsync(id).ConfigureAwait(false);
+    return user ?? throw new UserNotFoundException(id);
+}
 
-### 3.12. 其他
+// ✅ 推薦：ValueTask 用於可能同步完成的操作
+public async ValueTask<bool> ValidateAsync(string input)
+{
+    if (string.IsNullOrEmpty(input))
+        return false;
+        
+    return await _validator.IsValidAsync(input).ConfigureAwait(false);
+}
+```
 
-* **匿名函式 / 局部函式**  
-  - 不用外部變數時請宣告為 `static`。
-* **結構體 (`struct`)**  
-  - 若初始化後不變，建議標示為 `readonly struct`，並將成員也標示 `readonly`。
-* **使用大括號 `{}`**  
-  - `if`, `for`, `while`, `switch` 等控制流程都要有大括號。
-* **使用簡單 `using`**  
-  - 只需釋放資源時，保持簡潔。
-* **主要建構子 (Primary Constructor)**  
-  - 若類別/結構只有單一建構子，可用 Primary Constructor。
-* **最上層語句 (Top-level statements)**  
-  - 適用於程式碼邏輯簡單的應用。
-* **簡單 `default` 表達式**  
-  - 可用 `default` 取代 `default(int)` 等冗長寫法。
-* **解構變數宣告**
-  ```csharp
-  var (x, y) = GetCoordinates();
-  ```
-* **隱式物件建立**  
-  ```csharp
-  List<string> names = new() { "Alice", "Bob" };
-  ```
-* **內聯變數宣告**  
-  - 變數只用一次，可直接在使用處宣告。
-* **索引運算子**  
-  - 訪問集合元素時以 `list[i]` 為主。
-* **局部函式優先於匿名函式**  
-  - 若不需捕捉外部變數，局部函式效能較佳。
-* **優先進行空值檢查而非型別檢查**  
-  - 減少不必要型別錯誤。
-* **範圍運算子**  
-  - 善用 `..` 提升可讀性。
-* **元組交換**  
-  - `(a, b) = (b, a);` 簡潔達成交換。
-* **UTF-8 字串文字**
-* **`throw` 表達式**  
-  - 簡化錯誤拋出。
-* **棄置字元 `_`**  
-  - 忽略未使用變數或回傳值。
+### 4.2. ConfigureAwait 使用
+
+```csharp
+// ✅ 在類別庫中使用 ConfigureAwait(false)
+public async Task ProcessAsync()
+{
+    var data = await GetDataAsync().ConfigureAwait(false);
+    await SaveDataAsync(data).ConfigureAwait(false);
+}
+
+// ✅ 在 UI 應用中可省略 ConfigureAwait
+private async void Button_Click(object sender, EventArgs e)
+{
+    var result = await ProcessUserInputAsync(); // UI context needed
+    DisplayResult(result);
+}
+```
+
+### 4.3. 異步列舉 (IAsyncEnumerable)
+
+```csharp
+// ✅ 推薦：異步流處理大量資料
+public async IAsyncEnumerable<Order> GetOrdersAsync(
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+{
+    var page = 1;
+    List<Order> orders;
+    
+    do
+    {
+        orders = await _repository.GetOrdersPageAsync(page, 100, cancellationToken);
+        
+        foreach (var order in orders)
+        {
+            yield return order;
+        }
+        
+        page++;
+    } while (orders.Count > 0);
+}
+```
+
+## 5. 效能最佳化指南
+
+### 5.1. Span<T> 和 Memory<T>
+
+```csharp
+// ✅ 推薦：使用 Span<T> 避免記憶體分配
+public static int CountVowels(ReadOnlySpan<char> text)
+{
+    const string vowels = "aeiouAEIOU";
+    var count = 0;
+    
+    foreach (var ch in text)
+    {
+        if (vowels.Contains(ch))
+            count++;
+    }
+    
+    return count;
+}
+
+// 使用範例
+var text = "Hello World";
+var vowelCount = CountVowels(text.AsSpan());
+```
+
+### 5.2. 字串插值與格式化
+
+```csharp
+// ✅ 推薦：使用字串插值
+var message = $"用戶 {userName} 於 {DateTime.Now:yyyy-MM-dd} 登入";
+
+// ✅ 推薦：複雜格式化使用 StringBuilder
+var sb = new StringBuilder();
+foreach (var item in items)
+{
+    sb.AppendLine($"項目：{item.Name}，價格：{item.Price:C}");
+}
+var result = sb.ToString();
+```
+
+### 5.3. 例外處理最佳化
+
+```csharp
+// ✅ 推薦：使用 TryParse 避免例外
+public bool TryParseId(string input, out int id)
+{
+    return int.TryParse(input, out id) && id > 0;
+}
+
+// ✅ 推薦：特定例外處理
+public async Task<User> GetUserSafelyAsync(int id)
+{
+    try
+    {
+        return await _repository.GetUserAsync(id);
+    }
+    catch (UserNotFoundException)
+    {
+        return CreateGuestUser();
+    }
+    catch (DatabaseConnectionException ex)
+    {
+        _logger.LogError(ex, "資料庫連線失敗");
+        throw;
+    }
+}
+```
 
 ---
 
-## 4. 格式化規則
+## 6. 格式化規則
 
-### 4.1. 換行
+### 6.1. 換行規則
 
 * `catch` / `else` / `finally` **前**應有換行。
 * 匿名型別 / 物件初始化器成員之間應換行。
 * 左大括號 `{` 前應有換行。
 * 查詢表達式子句之間換行。
 
-### 4.2. 縮排
+```csharp
+// ✅ 推薦：正確的換行格式
+if (condition)
+{
+    DoSomething();
+}
+else
+{
+    DoSomethingElse();
+}
 
-* 區塊內容需縮排。
+try
+{
+    RiskyOperation();
+}
+catch (SpecificException ex)
+{
+    HandleException(ex);
+}
+finally
+{
+    Cleanup();
+}
+```
+
+### 6.2. 縮排規則
+
+* 區塊內容需縮排（4 個空格）。
 * 大括號 `{}` 與控制語句平齊。
 * `case` 內容及其區塊 `{}` 需縮排。
 * `label` 比當前程式碼層縮排少一層。
 
-### 4.3. 空格
+```csharp
+// ✅ 推薦：正確的縮排
+switch (value)
+{
+    case 1:
+        ProcessOne();
+        break;
+    case 2:
+        {
+            var temp = ProcessTwo();
+            return temp;
+        }
+    default:
+        ProcessDefault();
+        break;
+}
+```
 
-* `(int)x` — 轉型後不留空格。
-* 繼承子句 `:` 前後、逗號 `,` 後要空格；逗號前則不要空格。
-* 點號 `.` 前後不留空格。
-* `if` / `for` / `while` / `switch` 等關鍵字後面要空格。  
-* `for` 迴圈中分號後空一格。  
-* 二元運算子前後空一格。
-* 宣告語句周圍不應有多餘空格。
-* `[]` / `()` 中不留空格，方法呼叫括號內也不留空格。
+### 6.3. 空格規則
 
-### 4.4. 單行區塊 & 單行語句
+```csharp
+// ✅ 推薦：正確的空格使用
+
+// 轉型後不留空格
+var number = (int)value;
+
+// 繼承子句前後要空格
+public class Child : Parent, IInterface
+
+// 逗號後要空格，逗號前不要空格
+Method(param1, param2, param3);
+
+// 控制流程關鍵字後要空格
+if (condition) { }
+for (int i = 0; i < count; i++) { }
+while (isRunning) { }
+
+// 二元運算子前後要空格
+var result = a + b * c;
+var isValid = x > 0 && y < 100;
+
+// 方法呼叫括號內不留空格
+CallMethod(arg1, arg2);
+var item = array[index];
+```
+
+### 6.4. 單行區塊與語句
 
 * 若能放在單行，請保留單行，不要強制展開或換行。
 
----
+```csharp
+// ✅ 推薦：簡單語句保持單行
+if (isValid) return true;
 
-## 5. 命名規則
+// ✅ 推薦：簡單屬性單行定義
+public string Name { get; set; }
+public bool IsActive => _status == Status.Active;
 
-### 5.1. 命名慣例
-
-| 項目                           | 命名範例                             |
-|--------------------------------|--------------------------------------|
-| **型別 & 命名空間**            | `MyClass` / `MyNamespace`（PascalCase）         |
-| **介面 (Interface)**           | `IMyInterface`（IPascalCase）                   |
-| **型別參數 (Type Parameter)**  | `TMyType`（TPascalCase）                       |
-| **方法 (Method)**              | `MyMethod()`（PascalCase）                     |
-| **屬性 (Property)**            | `MyProperty`（PascalCase）                     |
-| **事件 (Event)**               | `MyEvent`（PascalCase）                        |
-| **本地變數 (Local Variable)**  | `myVariable`（camelCase）                      |
-| **本地常數 (Local Constant)**  | `myConstant`（camelCase）                      |
-| **參數 (Parameter)**           | `myParameter`（camelCase）                     |
-| **公開欄位 (Public Field)**    | `MyField`（PascalCase）                        |
-| **私有欄位 (Private Field)**   | `_myField`（_camelCase）                       |
-| **私有靜態欄位**               | `s_myStaticField`（s_camelCase）                |
-| **公開常數欄位**               | `MyConstant`（PascalCase）                     |
-| **私有常數欄位**               | `MyPrivateConstant`（PascalCase）              |
-| **公開靜態 `readonly` 欄位**   | `MyStaticReadonlyField`（PascalCase）          |
-| **私有靜態 `readonly` 欄位**   | `MyPrivateStaticReadonlyField`（PascalCase）    |
-| **列舉 (Enum)**                | `MyEnum`（PascalCase）                         |
-| **局部函式 (Local Function)**  | `MyLocalFunction()`（PascalCase）               |
-| **非欄位成員 (Non-Field Member)** | `MyMember`（PascalCase）                  |
-
-### 5.2. 命名規則定義
-
-- **介面 (Interface)**：`IMyInterface`  
-- **列舉 (Enum)**、**事件 (Event)**、**方法 (Method)**、**屬性 (Property)** 等：PascalCase。  
-- **公開欄位**：PascalCase；**私有欄位**：`_camelCase`；**私有靜態欄位**：`s_camelCase`。  
-- **常數欄位**（公開或私有）與靜態 `readonly` 欄位：PascalCase。  
-- **型別與命名空間**：PascalCase；**型別參數**：`TMyType`。  
-- **本地變數**、**本地常數**、**參數**：camelCase。  
-- **局部函式**：PascalCase。
-
-### 5.3. 命名風格
-
-* **PascalCase**：`MyClassName`
-* **IPascalCase**：`IMyInterface`
-* **TPascalCase**：`TMyType`
-* **_camelCase**：`_myField`
-* **camelCase**：`myVariable`
-* **s_camelCase**：`s_myStaticField`
+// ✅ 推薦：簡單 lambda 單行
+items.Where(x => x.IsValid).ToList();
+```
 
 ---
 
-## 6. 其他
+## 7. 命名規則與範例
 
-* **適用範圍**：本規範適用於所有 C# 程式碼。  
-* **疑問諮詢**：對於規範不清楚之處，請與團隊成員討論。  
-* **可更新性**：可依團隊需求彈性調整或增修。
+### 7.1. 命名慣例總覽
+
+| 項目 | 命名範例 | 說明 |
+|------|----------|------|
+| **型別 & 命名空間** | `UserService` / `MyCompany.Services` | PascalCase |
+| **介面** | `IUserRepository` | I + PascalCase |
+| **型別參數** | `TEntity`, `TKey` | T + PascalCase |
+| **方法** | `GetUserAsync()` | PascalCase |
+| **屬性** | `UserName` | PascalCase |
+| **事件** | `UserLoggedIn` | PascalCase |
+| **本地變數** | `userName` | camelCase |
+| **參數** | `userId` | camelCase |
+| **公開欄位** | `MaxRetryCount` | PascalCase |
+| **私有欄位** | `_repository` | _camelCase |
+| **私有靜態欄位** | `s_logger` | s_camelCase |
+| **常數** | `DefaultTimeout` | PascalCase |
+| **列舉** | `OrderStatus` | PascalCase |
+
+### 7.2. 實際命名範例
+
+#### 介面與實作
+```csharp
+// ✅ 推薦：清楚的介面命名
+public interface IUserRepository
+{
+    Task<User?> GetByIdAsync(int id);
+    Task<IEnumerable<User>> GetActiveUsersAsync();
+}
+
+public class UserRepository : IUserRepository
+{
+    private readonly IDbContext _context;
+    private static readonly ILogger s_logger = LoggerFactory.Create();
+    
+    // 實作細節...
+}
+```
+
+#### 方法命名
+```csharp
+// ✅ 推薦：清楚表達意圖的方法名
+public async Task<bool> TryAuthenticateUserAsync(string email, string password)
+public void ValidateUserInput(UserInput input)
+public User CreateUserFromRequest(CreateUserRequest request)
+public async Task NotifyUserRegistrationAsync(User user)
+```
+
+#### 變數與參數命名
+```csharp
+// ✅ 推薦：描述性的變數名
+public async Task ProcessOrderAsync(int orderId, bool sendNotification = true)
+{
+    var existingOrder = await _repository.GetOrderAsync(orderId);
+    var customerEmail = existingOrder.Customer.Email;
+    var orderTotal = existingOrder.Items.Sum(item => item.Price * item.Quantity);
+    
+    if (sendNotification)
+    {
+        await _emailService.SendOrderConfirmationAsync(customerEmail, existingOrder);
+    }
+}
+```
+
+#### 常數與列舉
+```csharp
+// ✅ 推薦：清楚的常數定義
+public static class ValidationConstants
+{
+    public const int MaxUserNameLength = 50;
+    public const int MinPasswordLength = 8;
+    public const string EmailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+}
+
+// ✅ 推薦：描述性的列舉
+public enum OrderStatus
+{
+    Pending = 0,
+    Confirmed = 1, 
+    Processing = 2,
+    Shipped = 3,
+    Delivered = 4,
+    Cancelled = 5,
+    Refunded = 6
+}
+```
+
+### 7.3. 泛型型別參數命名
+
+```csharp
+// ✅ 推薦：描述性的型別參數
+public interface IRepository<TEntity, TKey> 
+    where TEntity : class
+    where TKey : struct
+{
+    Task<TEntity?> GetByIdAsync(TKey id);
+    Task<IEnumerable<TEntity>> GetAllAsync();
+}
+
+public class BaseService<TEntity, TDto, TKey>
+    where TEntity : BaseEntity<TKey>
+    where TDto : BaseDto
+    where TKey : struct
+{
+    // 服務實作
+}
+```
 
 ---
 
-## 7. 防禦性程式設計與安全措施
+## 9. 現代 Web API 開發
+
+### 9.1. Minimal API 設計
+
+```csharp
+// Program.cs - 展示 .NET 8+ Minimal API
+var builder = WebApplication.CreateBuilder(args);
+
+// 服務註冊
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IUserService, UserService>();
+
+var app = builder.Build();
+
+// 開發環境配置
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// API 端點群組
+var usersApi = app.MapGroup("/api/users")
+    .WithTags("Users")
+    .WithOpenApi();
+
+usersApi.MapGet("/", GetAllUsers)
+    .WithSummary("取得所有用戶")
+    .Produces<List<UserDto>>();
+
+usersApi.MapGet("/{id:int}", GetUser)
+    .WithSummary("根據 ID 取得用戶")
+    .Produces<UserDto>()
+    .Produces(404);
+
+usersApi.MapPost("/", CreateUser)
+    .WithSummary("建立新用戶")
+    .Accepts<CreateUserRequest>("application/json")
+    .Produces<UserDto>(201)
+    .Produces<ValidationProblemDetails>(400);
+
+app.Run();
+
+// 端點處理函式
+static async Task<IResult> GetAllUsers(IUserService userService)
+{
+    var users = await userService.GetAllUsersAsync();
+    return Results.Ok(users);
+}
+
+static async Task<IResult> GetUser(int id, IUserService userService)
+{
+    var user = await userService.GetUserByIdAsync(id);
+    return user != null ? Results.Ok(user) : Results.NotFound();
+}
+
+static async Task<IResult> CreateUser(
+    CreateUserRequest request, 
+    IUserService userService,
+    IValidator<CreateUserRequest> validator)
+{
+    var validationResult = await validator.ValidateAsync(request);
+    if (!validationResult.IsValid)
+    {
+        return Results.ValidationProblem(validationResult.ToDictionary());
+    }
+    
+    var user = await userService.CreateUserAsync(request);
+    return Results.Created($"/api/users/{user.Id}", user);
+}
+```
+
+### 9.2. 依賴注入最佳實務
+
+```csharp
+// ✅ 推薦：服務註冊模式
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddApplicationServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // 資料存取層
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+        
+        // Repository 模式
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        
+        // 服務層
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IOrderService, OrderService>();
+        
+        // 外部服務
+        services.AddHttpClient<IExternalApiService, ExternalApiService>(client =>
+        {
+            client.BaseAddress = new Uri(configuration["ExternalApi:BaseUrl"]);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        
+        return services;
+    }
+}
+```
+
+## 10. 測試驅動開發
+
+### 10.1. 單元測試範例
+
+```csharp
+// ✅ 推薦：全面的單元測試
+[TestFixture]
+public class UserServiceTests
+{
+    private Mock<IUserRepository> _mockRepository;
+    private Mock<ILogger<UserService>> _mockLogger;
+    private UserService _userService;
+    
+    [SetUp]
+    public void Setup()
+    {
+        _mockRepository = new Mock<IUserRepository>();
+        _mockLogger = new Mock<ILogger<UserService>>();
+        _userService = new UserService(_mockRepository.Object, _mockLogger.Object);
+    }
+    
+    [Test]
+    public async Task GetUserAsync_ValidId_ReturnsUser()
+    {
+        // Arrange
+        var userId = 1;
+        var expectedUser = new User { Id = userId, Name = "測試用戶" };
+        _mockRepository.Setup(r => r.GetByIdAsync(userId))
+                      .ReturnsAsync(expectedUser);
+        
+        // Act
+        var result = await _userService.GetUserAsync(userId);
+        
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Id, Is.EqualTo(userId));
+        Assert.That(result.Name, Is.EqualTo("測試用戶"));
+    }
+    
+    [Test]
+    public async Task GetUserAsync_InvalidId_ThrowsArgumentException()
+    {
+        // Arrange & Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => _userService.GetUserAsync(-1));
+        
+        Assert.That(exception.Message, Does.Contain("用戶 ID 必須大於 0"));
+    }
+    
+    [TestCase(0)]
+    [TestCase(-1)]
+    [TestCase(-100)]
+    public async Task GetUserAsync_InvalidIds_ThrowsArgumentException(int invalidId)
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _userService.GetUserAsync(invalidId));
+    }
+}
+```
+
+### 10.2. 整合測試
+
+```csharp
+// ✅ 推薦：Web API 整合測試
+[TestFixture]
+public class UserApiIntegrationTests
+{
+    private WebApplicationFactory<Program> _factory;
+    private HttpClient _client;
+    
+    [SetUp]
+    public void Setup()
+    {
+        _factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    // 使用測試資料庫
+                    services.AddDbContext<AppDbContext>(options =>
+                        options.UseInMemoryDatabase("TestDb"));
+                });
+            });
+        
+        _client = _factory.CreateClient();
+    }
+    
+    [Test]
+    public async Task GetUsers_ReturnsSuccessAndCorrectContentType()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/users");
+        
+        // Assert
+        response.EnsureSuccessStatusCode();
+        Assert.That(response.Content.Headers.ContentType?.ToString(), 
+                   Does.Contain("application/json"));
+    }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        _client?.Dispose();
+        _factory?.Dispose();
+    }
+}
+```
+
+## 11. 其他最佳實務
+
+### 11.1. 設定管理
+
+```csharp
+// ✅ 推薦：強型別設定
+public class ApiSettings
+{
+    public const string SectionName = "ApiSettings";
+    
+    public required string BaseUrl { get; init; }
+    public required string ApiKey { get; init; }
+    public int TimeoutSeconds { get; init; } = 30;
+    public bool EnableRetry { get; init; } = true;
+}
+
+// 註冊設定
+builder.Services.Configure<ApiSettings>(
+    builder.Configuration.GetSection(ApiSettings.SectionName));
+
+// 使用設定
+public class ExternalApiService(IOptions<ApiSettings> options)
+{
+    private readonly ApiSettings _settings = options.Value;
+    
+    public async Task<string> CallApiAsync()
+    {
+        // 使用 _settings.BaseUrl, _settings.ApiKey 等
+    }
+}
+```
+
+### 11.2. 健康檢查
+
+```csharp
+// ✅ 推薦：健康檢查實作
+builder.Services.AddHealthChecks()
+    .AddDbContext<AppDbContext>()
+    .AddUrlGroup(new Uri("https://api.example.com/health"), "External API");
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+```
+
+## 12. 總結
+
+* **適用範圍**：本規範適用於所有使用 .NET 8+ 的 C# 專案。  
+* **持續改進**：隨著 .NET 和 C# 語言的發展，本規範將持續更新。  
+* **團隊協作**：對於規範不清楚之處，請與團隊成員討論並建立共識。  
+* **自動化**：利用 CI/CD 流程確保程式碼品質和規範遵循。
+
+### 12.1. 檢查清單
+
+在開發過程中，請確認以下項目：
+
+- [ ] 使用 .NET 8+ 和最新 C# 語言功能
+- [ ] 啟用 nullable 參考型別和隱含 using
+- [ ] 使用 file-scoped namespace
+- [ ] 遵循命名規範（PascalCase、camelCase、_camelCase）
+- [ ] 實作適當的參數驗證和異常處理
+- [ ] 使用異步模式和 ConfigureAwait(false)
+- [ ] 避免 SQL Injection 和 XSS 攻擊
+- [ ] 不在程式碼中硬編碼憑證
+- [ ] 撰寫單元測試和整合測試
+- [ ] 設定 CI/CD 自動化流程
+
+### 12.2. 資源連結
+
+- [.NET 8 官方文件](https://docs.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8)
+- [C# 程式設計指南](https://docs.microsoft.com/en-us/dotnet/csharp/)
+- [ASP.NET Core 最佳實務](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/best-practices)
+- [安全程式設計指南](https://docs.microsoft.com/en-us/dotnet/standard/security/)
+
+---
+
+**環友科技** - 致力於高品質的軟體開發與現代化技術應用
+
+---
+
+## 8. 防禦性程式設計與安全措施
 
 在程式開發中，安全性與防禦性設計是不可或缺的考量。以下為建議的安全作法：
 
-### 7.1. 防禦性程式設計
+### 8.1. 防禦性程式設計
 
-1. **資料驗證**：  
-   - 對外部輸入（參數、使用者輸入、設定檔）皆需檢查合法性，避免超出預期範圍或格式。  
-   - 避免直接信任使用者輸入，搭配商業邏輯及格式檢核。
-2. **Exception Handling**：  
-   - 在關鍵流程中使用 `try-catch` 捕捉可能錯誤，並進行適當的錯誤紀錄或回復（Rollback）。  
-   - 勿在 catch 區塊中隱藏例外，除非有清楚理由，並視情況重新拋出或記錄。
-3. **邏輯邊界檢查**：  
-   - 針對陣列索引、清單存取、計算結果等，皆要防範超出邏輯範圍的狀況。  
-   - 避免用硬編碼來假設特定範圍，務必在程式中適度檢查。
-4. **最小權限原則**：  
-   - 盡量以低權限執行程式，如需較高權限操作，應在個別流程或函式中「最短時間」取得並釋放該權限。
+#### 參數驗證
+```csharp
+// ✅ 推薦：完整的參數驗證
+public async Task<User> CreateUserAsync(CreateUserRequest request)
+{
+    // .NET 8+ 的參數驗證
+    ArgumentNullException.ThrowIfNull(request);
+    ArgumentException.ThrowIfNullOrWhiteSpace(request.Email, nameof(request.Email));
+    
+    // 商業邏輯驗證
+    if (request.Age < 0 || request.Age > 150)
+    {
+        throw new ArgumentOutOfRangeException(nameof(request.Age), "年齡必須在 0-150 之間");
+    }
+    
+    // 檢查重複
+    var existingUser = await _repository.GetByEmailAsync(request.Email);
+    if (existingUser != null)
+    {
+        throw new InvalidOperationException($"Email {request.Email} 已被使用");
+    }
+    
+    return new User { /* ... */ };
+}
+```
 
-### 7.2. 避免 SQL Injection
+#### 異常處理最佳實務
+```csharp
+// ✅ 推薦：分層異常處理
+public class UserService
+{
+    private readonly ILogger<UserService> _logger;
+    
+    public async Task<Result<User>> GetUserSafelyAsync(int userId)
+    {
+        try
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
+            
+            var user = await _repository.GetUserAsync(userId);
+            return Result.Success(user);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "無效的用戶 ID: {UserId}", userId);
+            return Result.Failure<User>("無效的用戶 ID");
+        }
+        catch (DatabaseException ex)
+        {
+            _logger.LogError(ex, "取得用戶時發生資料庫錯誤: {UserId}", userId);
+            return Result.Failure<User>("系統暫時無法存取用戶資料");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "取得用戶時發生未預期錯誤: {UserId}", userId);
+            return Result.Failure<User>("系統發生錯誤");
+        }
+    }
+}
 
-1. **參數化查詢**：  
-   - 在使用 SQL 指令時，應使用參數化，避免直接串接字串。  
-   - 例如在 ADO.NET 中使用 `SqlParameter`，或在 ORM（如 Entity Framework）中使用 LINQ 查詢。
-2. **Stored Procedure**（視情況）  
-   - 可將複雜邏輯放入預存程序（Stored Procedure），減少組合 SQL 字串的風險。
-3. **輸入消毒**：  
-   - 對原本就不該出現「特殊字元」的輸入，加以檢查或濾除，如 `--`, `;`, `'` 等（視應用情境而定）。  
-   - 並確保不在前端或後端將使用者輸入直接拼接成 SQL 指令。
+// Result 模式範例
+public readonly record struct Result<T>(bool IsSuccess, T? Value, string? Error)
+{
+    public static Result<T> Success(T value) => new(true, value, null);
+    public static Result<T> Failure(string error) => new(false, default, error);
+}
+```
 
-### 7.3. 避免 XSS（跨站腳本攻擊）
+### 8.2. 避免 SQL Injection
 
-1. **編碼輸出**：  
-   - 在顯示使用者輸入（或外部資料）到網頁時，請進行 HTML 編碼（HTML-encode），避免惡意 JavaScript 注入。  
-   - 如 Razor 預設會進行自動編碼，但若使用 `@Html.Raw()` 或前端框架，則需特別留意。
-2. **輸入過濾**：  
-   - 從前端到後端，都應該針對輸入值做基礎檢核，並且只允許合法格式。  
-3. **Content Security Policy (CSP)**（若前端架構允許）  
-   - 限制頁面可載入的外部資源、執行的 script 來源，降低 XSS 風險。
+#### 參數化查詢
+```csharp
+// ✅ 推薦：使用參數化查詢
+public async Task<User?> GetUserByEmailAsync(string email)
+{
+    const string sql = "SELECT * FROM Users WHERE Email = @Email";
+    
+    using var connection = _connectionFactory.CreateConnection();
+    return await connection.QuerySingleOrDefaultAsync<User>(sql, new { Email = email });
+}
 
-### 7.4. 密碼與憑證
+// ✅ 推薦：Entity Framework 的 LINQ 查詢
+public async Task<List<User>> SearchUsersAsync(string searchTerm)
+{
+    return await _context.Users
+        .Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm))
+        .ToListAsync();
+}
 
-1. **避免明碼儲存**：  
-   - 密碼及機敏資訊請使用散雜（hash）與加密存放，伺服器端務必妥善保護金鑰。
-2. **憑證管理**：  
-   - 在程式庫或檔案中，切勿硬編碼憑證或 API 金鑰，可使用安全儲存（如 Azure Key Vault、AWS Secrets Manager）。
-3. **鹽值（Salt）**  
-   - 雜湊前加鹽值，防禦彩虹表攻擊。
+// ❌ 危險：字串拼接 SQL
+public async Task<User> GetUserUnsafe(string email)
+{
+    // 永遠不要這樣做！
+    var sql = $"SELECT * FROM Users WHERE Email = '{email}'";
+    // 這會導致 SQL Injection 攻擊
+}
+```
 
-### 7.5. 日誌與審計
+### 8.3. 避免 XSS（跨站腳本攻擊）
 
-1. **記錄關鍵操作**：  
-   - 像是登入登出、資料變更、批次處理等動作都應記錄。  
-2. **避免記錄敏感資訊**：  
-   - 在日誌中勿包含密碼或完整憑證。  
-   - 使用適當遮罩（mask）或摘要（hash）。
+#### 輸出編碼
+```csharp
+// ✅ 推薦：Web API 自動處理 JSON 編碼
+[ApiController]
+public class UserController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public async Task<ActionResult<UserDto>> GetUser(int id)
+    {
+        var user = await _userService.GetUserAsync(id);
+        if (user == null)
+            return NotFound();
+            
+        // JSON 序列化會自動進行適當的編碼
+        return Ok(user);
+    }
+}
 
-### 7.6. 其他建議
+// ✅ 推薦：Razor 頁面自動編碼
+// 在 .cshtml 中
+@Model.UserName // 自動進行 HTML 編碼
 
-1. **使用 SSL/TLS**：  
-   - 任何傳輸機敏資料的介面應採用加密協定。
-2. **程式碼審核**：  
-   - Pull Request 或合併前，建議進行程式碼審核（Code Review），並驗證安全性需求。
-3. **更新框架與套件**：  
-   - 定期更新 .NET / NuGet 套件，避免使用含有已知漏洞的舊版元件。
+// ❌ 危險：使用 Html.Raw
+@Html.Raw(Model.UserInput) // 可能導致 XSS 攻擊
+```
+
+#### 輸入驗證
+```csharp
+// ✅ 推薦：輸入驗證與清理
+public class InputSanitizer
+{
+    private static readonly Regex s_htmlTagPattern = new(@"<[^>]*>");
+    
+    public static string SanitizeInput(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+            
+        // 移除 HTML 標籤
+        var sanitized = s_htmlTagPattern.Replace(input, string.Empty);
+        
+        // 移除潛在危險字符
+        sanitized = sanitized.Replace("<script", string.Empty, StringComparison.OrdinalIgnoreCase);
+        sanitized = sanitized.Replace("javascript:", string.Empty, StringComparison.OrdinalIgnoreCase);
+        
+        return sanitized.Trim();
+    }
+}
+```
+
+### 8.4. 密碼與憑證管理
+
+#### 密碼雜湊
+```csharp
+// ✅ 推薦：使用 BCrypt 進行密碼雜湊
+public class PasswordService
+{
+    public string HashPassword(string password)
+    {
+        // 使用適當的工作因子（推薦 12 或更高）
+        return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+    }
+    
+    public bool VerifyPassword(string password, string hashedPassword)
+    {
+        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+    }
+}
+```
+
+#### 憑證管理
+```csharp
+// ✅ 推薦：使用 IConfiguration 和 Azure Key Vault
+public class ApiService
+{
+    private readonly string _apiKey;
+    
+    public ApiService(IConfiguration configuration)
+    {
+        // 從安全儲存讀取憑證
+        _apiKey = configuration["ExternalApi:ApiKey"] 
+                  ?? throw new InvalidOperationException("API Key 未設定");
+    }
+    
+    // ❌ 永遠不要在程式碼中硬編碼憑證
+    // private const string ApiKey = "sk-1234567890abcdef"; 
+}
+```
+
+### 8.5. 日誌與監控
+
+#### 安全日誌記錄
+```csharp
+// ✅ 推薦：安全的日誌記錄
+public class SecurityAuditService
+{
+    private readonly ILogger<SecurityAuditService> _logger;
+    
+    public void LogSuccessfulLogin(string userId, string ipAddress)
+    {
+        _logger.LogInformation("用戶 {UserId} 從 {IpAddress} 成功登入", 
+            userId, ipAddress);
+    }
+    
+    public void LogFailedLogin(string attemptedEmail, string ipAddress)
+    {
+        // 注意：不記錄完整的密碼或敏感資訊
+        _logger.LogWarning("登入失敗 - Email: {Email}, IP: {IpAddress}", 
+            MaskEmail(attemptedEmail), ipAddress);
+    }
+    
+    private static string MaskEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email)) return "未知";
+        
+        var atIndex = email.IndexOf('@');
+        if (atIndex <= 0) return "***";
+        
+        return email[0] + "***" + email.Substring(atIndex);
+    }
+}
+```
+
+### 8.6. 其他安全建議
+
+#### API 安全
+```csharp
+// ✅ 推薦：API 限流和驗證
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    [HttpPost]
+    [Authorize] // 要求身份驗證
+    [ValidateAntiForgeryToken] // CSRF 保護
+    public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserRequest request)
+    {
+        // 實作邏輯
+    }
+    
+    [HttpGet]
+    [ResponseCache(Duration = 300)] // 快取控制
+    public async Task<ActionResult<List<User>>> GetUsers()
+    {
+        // 實作邏輯
+    }
+}
+```
+
+#### 更新與維護
+```csharp
+// 在 csproj 中設定自動安全更新檢查
+/*
+<PropertyGroup>
+  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  <WarningsAsErrors />
+  <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  <AnalysisLevel>latest</AnalysisLevel>
+  <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+</PropertyGroup>
+
+<ItemGroup>
+  <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+    <PrivateAssets>all</PrivateAssets>
+    <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+  </PackageReference>
+</ItemGroup>
+*/
+```
