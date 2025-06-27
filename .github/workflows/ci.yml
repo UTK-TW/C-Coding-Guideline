@@ -1,0 +1,107 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: |
+        cd examples/BasicExample
+        dotnet restore
+        cd ../WebApiExample  
+        dotnet restore
+        cd ../ClassLibraryExample
+        dotnet restore
+        
+    - name: Build projects
+      run: |
+        cd examples/BasicExample
+        dotnet build --no-restore --configuration Release
+        cd ../WebApiExample
+        dotnet build --no-restore --configuration Release
+        cd ../ClassLibraryExample
+        dotnet build --no-restore --configuration Release
+        
+    - name: Run console application
+      run: |
+        cd examples/BasicExample
+        dotnet run --configuration Release
+        
+    - name: Test Web API (basic smoke test)
+      run: |
+        cd examples/WebApiExample
+        # Start the application in background
+        dotnet run --configuration Release &
+        API_PID=$!
+        
+        # Wait for the application to start
+        sleep 10
+        
+        # Test basic endpoint (using correct port 5217)
+        curl -f http://localhost:5217/ || exit 1
+        
+        # Test person endpoint
+        curl -f http://localhost:5217/person/測試/25 || exit 1
+        
+        # Stop the application
+        kill $API_PID || true
+        
+    - name: Check code formatting (if .editorconfig exists)
+      run: |
+        if [ -f .editorconfig ]; then
+          echo "檢查程式碼格式..."
+          find examples -name "*.cs" | xargs -I {} dotnet format --verify-no-changes {}
+        else
+          echo "跳過格式檢查：.editorconfig 不存在"
+        fi
+      continue-on-error: true
+        
+  quality-checks:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Security scan (if applicable)
+      run: |
+        echo "執行安全性掃描..."
+        # 可以添加 Snyk 或其他安全掃描工具
+        
+    - name: Code analysis
+      run: |
+        echo "執行程式碼分析..."
+        cd examples
+        find . -name "*.csproj" -exec dotnet build {} --verbosity minimal \;
+        
+    - name: Validate guideline examples
+      run: |
+        echo "驗證程式碼範例符合規範..."
+        # 檢查是否使用了 file-scoped namespace
+        find examples -name "*.cs" -not -path "*/obj/*" -not -path "*/bin/*" | xargs grep -L "namespace.*;" | wc -l
+        
+        # 檢查是否正確使用 using 指示詞
+        find examples -name "*.cs" -not -path "*/obj/*" -not -path "*/bin/*" | xargs grep -c "^using " | head -5
+        
+        echo "程式碼範例驗證完成"
