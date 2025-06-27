@@ -52,11 +52,11 @@ jobs:
         # Wait for the application to start
         sleep 10
         
-        # Test basic endpoint
-        curl -f http://localhost:5000/ || exit 1
+        # Test basic endpoint (using correct port 5217)
+        curl -f http://localhost:5217/ || exit 1
         
         # Test person endpoint
-        curl -f http://localhost:5000/person/測試/25 || exit 1
+        curl -f http://localhost:5217/person/測試/25 || exit 1
         
         # Stop the application
         kill $API_PID || true
