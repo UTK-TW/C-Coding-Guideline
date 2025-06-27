@@ -2,7 +2,41 @@
 
 這份文件旨在提供一個全面的 C# 程式碼撰寫指南，協助開發團隊撰寫出 **一致**、**易於維護**且**安全**的程式碼。遵循這些準則能夠提升程式碼品質，並確保團隊協作的效率。
 
+> **更新說明**：本規範已更新至 **.NET 8** 標準，包含最新的 C# 語言功能和最佳實務。所有範例程式碼都經過實際測試，並提供完整的 CI/CD 自動化流程。
+
+## 🚀 快速開始
+
+本規範提供完整的範例專案，位於 `examples/` 目錄：
+
+- **BasicExample**: 展示基本 C# 語法和 .NET 8 新功能
+- **WebApiExample**: 展示 Minimal API 和現代 Web 開發模式  
+- **ClassLibraryExample**: 展示類別庫設計最佳實務
+
+執行範例：
+```bash
+# 建置所有專案
+dotnet build
+
+# 執行控制台範例
+cd examples/BasicExample && dotnet run
+
+# 執行 Web API 範例
+cd examples/WebApiExample && dotnet run
+```
+
 ## 1. 通則
+
+* **目標框架**：使用 **.NET 8** 或更新版本，啟用最新 C# 語言版本。  
+  ```xml
+  <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+      <TargetFramework>net8.0</TargetFramework>
+      <LangVersion>latest</LangVersion>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+  </Project>
+  ```
 
 * **縮排**：使用 **空格** 進行縮排，每層 **4 個空格**。  
   讓程式碼整齊易讀，避免用 Tab 縮排造成對齊不一致。
@@ -13,34 +47,187 @@
 * **檔案結尾換行**：檔案結尾**不**需要插入新的一行。  
   避免多餘空行，利於版本控管時差異比對。
 
+* **Nullable 參考型別**：專案中應啟用 nullable 參考型別檢查。  
+  提升程式碼安全性，減少 null 參考例外。
+
+* **隱含 using**：啟用隱含 using 指示詞，減少重複程式碼。  
+  使用 `global using` 管理全域命名空間引用。
+
 ---
 
 ## 2. 程式碼結構
 
 ### 2.1. using 指示詞
 
+* **全域 using**：使用 `global using` 統一管理常用命名空間。
+  ```csharp
+  // GlobalUsings.cs
+  global using System.Text.Json;
+  global using Microsoft.Extensions.DependencyInjection;
+  ```
+
 * **排序**：
-  1. 系統命名空間（`System.*`）排在最前面。  
-  2. 不同的 `using` 區塊以空白行分隔。
+  1. 全域 `using` 指示詞放在獨立檔案（`GlobalUsings.cs`）  
+  2. 系統命名空間（`System.*`）排在最前面  
+  3. 不同的 `using` 區塊以空白行分隔
 
 * **位置**：`using` 指示詞應放在命名空間之外。  
   確保作用範圍涵蓋整個檔案並符合通用程式碼風格。
 
-* **簡化宣告**：建議使用簡化的 `using` 宣告形式（如 `using var foo = ...;`）以使程式碼更精簡。
+* **簡化宣告**：建議使用簡化的 `using` 宣告形式。
+  ```csharp
+  // ✅ 推薦：簡化 using 宣告
+  using var fileStream = new FileStream("data.txt", FileMode.Open);
+  // 自動處理資源釋放
+  
+  // ❌ 避免：傳統 using 區塊（除非有複雜邏輯）
+  using (var fileStream = new FileStream("data.txt", FileMode.Open))
+  {
+      // ...
+  }
+  ```
 
 ### 2.2. 命名空間
 
-* **file-scoped namespace**：
+* **File-scoped namespace**：強制使用檔案範圍命名空間宣告。
   ```csharp
-  namespace MyNamespace;
+  // ✅ 推薦：File-scoped namespace
+  namespace MyCompany.MyProject.Services;
+  
+  public class UserService
+  {
+      // 類別內容
+  }
   ```
-  此宣告方式更清爽且明確表示命名空間範圍。
+  
+  ```csharp
+  // ❌ 避免：傳統命名空間區塊
+  namespace MyCompany.MyProject.Services
+  {
+      public class UserService
+      {
+          // 類別內容
+      }
+  }
+  ```
 
 * **資料夾結構一致**：命名空間名稱盡量與資料夾路徑對應，方便管理與維護。
 
+### 2.3. 最上層語句 (Top-level statements)
+
+* **適用場景**：適合程式碼邏輯簡單的控制台應用程式。
+  ```csharp
+  // Program.cs - 展示最上層語句
+  using MyLibrary.Services;
+  
+  Console.WriteLine("應用程式啟動");
+  
+  var service = new CalculatorService();
+  var result = service.Add(10, 20);
+  Console.WriteLine($"結果: {result}");
+  
+  await ProcessDataAsync();
+  
+  // 局部函式
+  static async Task ProcessDataAsync()
+  {
+      await Task.Delay(1000);
+      Console.WriteLine("處理完成");
+  }
+  ```
+
 ---
 
-## 3. 程式碼樣式
+## 3. 現代 C# 語法與最佳實務
+
+### 3.1. 記錄類型 (Record Types)
+
+* **使用情境**：數據傳輸物件、不可變模型、值物件。
+  ```csharp
+  // ✅ 推薦：記錄類型與 Primary Constructor
+  public record Person(string Name, int Age)
+  {
+      public string DisplayName => $"{Name} ({Age}歲)";
+      public bool IsAdult => Age >= 18;
+  }
+  
+  // 使用範例
+  var person = new Person("張三", 30);
+  var updated = person with { Age = 31 }; // 非破壞性更新
+  ```
+
+### 3.2. Required 成員
+
+* **強制初始化**：使用 `required` 確保重要屬性必須在建立時設定。
+  ```csharp
+  public class Employee
+  {
+      public required int Id { get; init; }
+      public required string Name { get; init; }
+      public required string Email { get; init; }
+      public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+      public string? Department { get; init; }
+  }
+  
+  // 使用時必須提供 required 屬性
+  var employee = new Employee 
+  { 
+      Id = 1, 
+      Name = "李四", 
+      Email = "li@example.com" 
+  };
+  ```
+
+### 3.3. 集合表達式 (Collection Expressions)
+
+* **.NET 8 新功能**：簡化集合初始化語法。
+  ```csharp
+  // ✅ 推薦：集合表達式
+  int[] numbers = [1, 2, 3, 4, 5];
+  List<string> names = ["Alice", "Bob", "Charlie"];
+  Dictionary<string, int> scores = new() { ["Alice"] = 95, ["Bob"] = 87 };
+  
+  // 展開運算子
+  int[] moreNumbers = [..numbers, 6, 7, 8];
+  ```
+
+### 3.4. Primary Constructor
+
+* **類別簡化**：適用於簡單的依賴注入和參數傳遞。
+  ```csharp
+  // ✅ 推薦：Primary Constructor
+  public class OrderService(IRepository repository, ILogger<OrderService> logger)
+  {
+      public async Task<Order?> GetOrderAsync(int id)
+      {
+          logger.LogInformation("取得訂單 {OrderId}", id);
+          return await repository.GetByIdAsync<Order>(id);
+      }
+  }
+  ```
+
+### 3.5. 模式比對與 Switch 表達式
+
+* **強化的模式比對**：使用現代模式比對語法。
+  ```csharp
+  // ✅ 推薦：Switch 表達式
+  public string GetAgeCategory(int age) => age switch
+  {
+      < 13 => "兒童",
+      >= 13 and < 20 => "青少年", 
+      >= 20 and < 65 => "成年人",
+      >= 65 => "老年人"
+  };
+  
+  // 屬性模式
+  public decimal GetDiscount(Customer customer) => customer switch
+  {
+      { Type: CustomerType.Premium, YearsActive: > 5 } => 0.2m,
+      { Type: CustomerType.Premium } => 0.1m,
+      { YearsActive: > 10 } => 0.05m,
+      _ => 0m
+  };
+  ```
 
 ### 3.1. 關鍵字與型別
 
